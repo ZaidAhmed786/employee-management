@@ -5,6 +5,7 @@ const path = require("path");
 const cors = require("cors"); 
 const PORT = process.env.PORT || 5000; 
 const routes = require('./routes/routes');  
+const attendanceRoutes = require('./routes/attendance')
 const bodyParser = require('body-parser');
 const { AppError, errorHandler } = require('./utils/errorHandling'); 
 /************** Middlewares ****************/
@@ -25,11 +26,12 @@ let corsOptions = {
 app.use(cors(corsOptions));
  
 /************** Routes ****************/
+app.use('/attendance' ,attendanceRoutes); /*** Attendance Route ***/ 
 app.use('/' ,routes); /*** Application Route ***/ 
 
  
 app.use((req, res, next) => {
-  const err = new AppError(`Can't find ${req.originalUrl} on this server.`, 404);
+  const err = new AppError(`Can't find ${req.originalUrl}   on this server.`, 404);
   next(err);
 });
 // Use the custom error handling middleware

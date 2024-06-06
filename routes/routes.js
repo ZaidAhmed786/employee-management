@@ -1,55 +1,80 @@
 const express = require("express");
-const router = express.Router();
 const upload = require("../middleware/MulterMiddleware");
+const router = express.Router();
 
-//-- *********** Import Controller Functions *********** --//
+// Import Controllers
 const UserController = require("../controllers/UserController");
 const SalaryController = require("../controllers/SalaryController");
 const SalesController = require("../controllers/SalesController");
 const AuthController = require("../controllers/AuthController");
-//!!  ********************* Routes ********************* --//
-require("dotenv").config();
 
+// Homepage Route
 router.get("/", (req, res) => {
-  res.send("Leilani Employee Management System");
+  res.send("Welcome to Leilani Employee Management System");
 });
 
-// Login Route
-router.post("/login", AuthController.login);
+// Authentication Routes
+router.post("/auth/login", AuthController.login);
 
-//! *** Salary Routes *** !//
+// Salary Routes
 router
   .route("/api/salary")
-  .get(SalaryController.getSalaries) /*** Get all Salaries ***/
-  .post(SalaryController.addSalary); /*** Add New Salary ***/
+  .get(SalaryController.getSalaries)
+  .post(SalaryController.addSalary);
+
 router
   .route("/api/salary/:id")
-  .get(SalaryController.getSingleSalary) /*** Get a Single Salary ***/
-  .patch(SalaryController.updateSalary) /*** Update Salary ***/
-  .delete(SalaryController.deleteSalary); /*** Remove Salary ***/
+  .get(SalaryController.getSingleSalary)
+  .patch(SalaryController.updateSalary)
+  .delete(SalaryController.deleteSalary);
 
-//! *** Sales Routes ***!//
+// Sales Routes
 router
   .route("/api/sales")
-  .get(SalesController.getSales) /*** Get all Sales ***/
-  .post(SalesController.addSales); /*** Add New Sales ***/
+  .get(SalesController.getSales)
+  .post(SalesController.addSales);
+
 router
   .route("/api/sales/:id")
-  .get(SalesController.getSingleSale) /*** Get a Single Sales ***/
-  .patch(SalesController.updateSale) /*** Update Sales ***/
-  .delete(SalesController.deleteSale); /*** Remove Sales ***/
+  .get(SalesController.getSingleSale)
+  .patch(SalesController.updateSale)
+  .delete(SalesController.deleteSale);
 
-//! *** Users Routes ***!//
+// Users Routes
 router
   .route("/api/users")
-  .get(UserController.get_users) /*** Get all Users ***/
-  .post(UserController.add_user); /*** Add New Users ***/
+  .get(
+    AuthController.protect,
+    AuthController.restrictTo("admin", "manager"),
+    UserController.getUsers
+  )
+  .post(
+    upload.single("image"),
+    AuthController.protect,
+    AuthController.restrictTo("admin", "manager"),
+    UserController.addUser
+  );
+
 router
   .route("/api/users/:id")
-  .get(UserController.get_single_user) /*** Get a Single User ***/
-  .patch(UserController.update_user) /*** Update Users ***/
-  .delete(UserController.remove_user); /*** Remove Users ***/
+  .get(
+    AuthController.protect,
+    AuthController.restrictTo("admin", "manager"),
+    UserController.getSingleUser
+  )
+  .patch(
+    upload.single("image"),
+    AuthController.protect,
+    AuthController.restrictTo("admin", "manager"),
+    UserController.updateUser
+  )
+  .delete(
+    AuthController.protect,
+    AuthController.restrictTo("admin", "manager"),
+    UserController.removeUser
+  );
 
+// Route Not Found
 router.all("*", (req, res) => {
   res.send("Route not found");
 });

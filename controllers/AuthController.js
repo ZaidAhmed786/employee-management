@@ -3,10 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const util = require("util");
 
-// Move token to environment variable
 const loginToken = process.env.LOGIN_TOKEN || "leilani_login";
 
-// Cookie options
 const cookieOptions = {
     httpOnly: true,
     expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
@@ -14,13 +12,13 @@ const cookieOptions = {
 
 exports.signup = async (req, res, next) => {
   try {
-    const newUser = await new User(req.body).save();
+    const newUser = await new User({email: req.body.email, password: req.body.password}).save();
     const token = jwt.sign({ id: newUser._id, name: newUser.name }, loginToken);
     res.cookie('jwt_review', token, cookieOptions);
     res.status(200).json({
       status: "success",
       data: {
-        user: newUser,
+        user: {email: newUser.email},
       },
     });
   } catch (err) {
@@ -28,7 +26,7 @@ exports.signup = async (req, res, next) => {
   }
 };
 
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -37,20 +35,27 @@ exports.login = async (req, res, next) => {
         message: "Please provide both email and password.",
       });
     }
-    const user = await User.findOne({ email });
-    if (!user) {
+    
+    const loginUser = await User.findOne({ email });
+    if (!loginUser) { 
       return res.status(400).json({
         status: "failed",
         message: "No user found with this email.",
       });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    
+    const isPasswordValid = await bcrypt.compare(password, loginUser.password); 
+    if (!isPasswordValid) { 
       return res.status(401).json({ message: "Invalid email or password." });
     }
-    const token = jwt.sign({ id: user._id }, loginToken);
-    res.cookie('jwt_review', token, cookieOptions);
-    res.status(200).json({ status: "success" });
+   
+    const token = jwt.sign({ id: loginUser._id }, loginToken);
+    let user = {
+      email: loginUser.email,
+      token,
+      _id: loginUser._id
+    }
+    res.status(200).json({ status: "success", data: {user} });
   } catch (err) {
     res.status(400).json({ status: "failed", message: err.message });
   }
